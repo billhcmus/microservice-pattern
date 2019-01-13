@@ -172,3 +172,35 @@
 <p align="center">
     <img width="500" src="/images/query-service.png" alt="">
 </p>
+
+- Ví dụ ở đây ta có một Order History Service, Service này có cài đặt query findOrderHistory(). Service này đăng ký nhận các event được push từ một vài service, bao gồm các service có các thông tin cần thiết cho việc query Order History.
+
+#### Lợi ích của CQRS
+
+- CQRS có những điểm cộng sau:
+  - Cho phép triển khai hiệu quả các truy vấn trong kiến trúc microservice.
+    - Triển khai hiệu quả các truy vấn cần truy vết dữ liệu ở nhiều service khác nhau.
+    - Hiệu quả hơn so với khi sử dụng API Composition.
+  - Cho phép triển khai hiệu quả các truy vấn đa dạng
+    - Một số NoSQL databases khả năng query bị giới hạn.
+    - Ngay cả khi database có phần mở rộng hỗ trợ một số loại query, thì việc sử dụng database chuyên dụng cho loại dữ liệu đó thì luôn hiệu quả hơn.
+    - CQRS pattern tránh việc giới hạn trong một datastore bằng cách định nghĩa nhiều views, mỗi view sẽ hiệu quả cho từng loại truy vấn đặc biệt.
+  - Có thể truy vấn trong những ứng dụng dựa trên nền tảng event sourcing.
+    - CQRS khắc phục một số nhược điểm của event-sourcing, event store chỉ hỗ trợ những truy vấn dựa trên khóa chính.
+    - CQRS giải quyết vấn đề này bằng các định nghĩa một hay nhiều tổ hợp view, được cập nhật bằng cách đăng ký là luồng sự kiện được publish bởi các tổ hợp dựa trên event-sourcing.
+  - Cải thiện việc tách biệt các concerns.
+    - Một trong những lợi ích của CQRS đó là tách biệt các concerns.
+    - Domain model và data model không handle cả command lẫn queries, CQRS pattern chia code modules và lược đồ database cho command và query side của một service. Bằng cách chia ra command side và query side trở nên dễ dàng để bảo trì, phát triển.
+    - Ngoài ra service triển khai query sẽ khác so với service sở hữu dữ liệu.
+
+#### Nhược điểm của CQRS
+
+- Mặc dù có những ưu điểm vượt trồi, những CQRS cũng có những nhược điểm gây khó khăn như:
+  - Làm cho kiến trúc trở nên phức tạp hơn
+    - Lập trình viên phải viết query-side services để mà update và query view.
+    - Khi application có thể sử dụng những loại database khác nhau, nó lại làm tăng thêm phần phức tạp cho các oeprations.
+  - Đối mặt với Replication Lag
+    - Hiện tượng lag giữa command-side và query-side. Ta luôn mong đợi rằng khi command side publish một sự kiện và khi sự kiện được query side xử lý xong thì view sẽ được update. Vấn đề là làm sao tránh được tình trạng inconsistency khi client app update.
+
+#### Thiết kế CQRS views
+
