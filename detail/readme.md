@@ -254,3 +254,36 @@
 
 #### Event sourcing and publishing events
 
+##### Sử dụng cơ chế polling để publish events
+
+- Các events được lưu trữ ở events table, event publisher có thể poll bảng này khi có sự kiện mới bằng cách thực hiện truy vấn SELECT và publish events tới message broker.
+- Tuy nhiên vấn đề đặt ra là đâu là events mới. Với cách tiếp cận này thì transaction có thứ tự commit có thể khác với thứ tự generate của event.
+- Giả sử publisher có một câu truy vấn lấy phần tử có Id lớn nhất.
+
+<p align="center">
+    <img width="500" src="/detail/images/event-sourcing-problem.png" alt="">
+</p>
+
+- Trong ngữ cảnh này transaction A insert một event có Id là 1010, transaction B insert một event có Id là 1020 sau đó commit. Nếu lúc này publisher tiến hành query thì nó sẽ tìm ra event có Id 1020, sau đó transaction A commit và event có id là 1010 sẽ bị ignore.
+- Có một giải pháp cho vấn đề này đó là thêm trường PUBLISHED vào trong Events table, khi đó ta sẽ query check xem giá trị của PUBLISHED là true hay false, nếu là false thì publish event vào message broker, và set giá trị là true.
+
+##### Sử transaction log tailing đó publish events
+
+- Sử dụng transaction log tailing sẽ đảm bảo rằng events được publish và có hiệu năng và tính mở rộng cao.
+- Trên thực tế Eventuate Local, một open source event store sử dụng các tiếp cận này. Nó đọc events được insert vào event store từ transaction log database và publish nó vào message broker.
+
+#### Ưu điểm của event sourcing
+
+- Tính tin cậy trong việc publish domain event
+    - Khi state của một đối tượng thay đổi thì event sourcing đảm bảo tin cậy về publish event.
+    - Mỗi event đều có thể chứa thông tin về người thay đổi, nên event sourcing cung cấp audit log đảm bảo tính chính xác.
+    - Event sourcing có luồng các events sử dụng cho các mục đích khác nhau bao gồm notify, tích hợp, phân tích, giám sát,...
+- Lưu giữ lịch sử của đối tượng
+    - Event sourcing lưu trữ toàn bộ lịch sử thay đối của đối tượng, do đó có thể tạo một query để truy vết các trạng thái cũ của đối tượng.
+- Tránh vấn đề mismatch trong ORM
+
+#### Nhược điểm
+
+- Để sử dụng event sourcing phải thay đổi business logic của ứng dụng hiện tại.
+- Query trong event store là một thử thách, tuy nhiên khi kết hợp với CQRS thì có thể giải quyết được vấn đề này.
+- 
